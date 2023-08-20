@@ -1,26 +1,26 @@
-/*@!Encoding:936*/
+ï»¿/*@!Encoding:936*/
 includes
 {
-  #include "´òÓ¡ÔöÇ¿.can"
+  #include "æ‰“å°å¢å¼º.can"
 }
 
 variables
 {
   struct Diag{
-    long handle; // ¾ä±ú
-    int diagReq; // // 0 ÎŞÓ¦´ğ £¬ 1ÓĞÓ¦´ğ£¬ 2Á÷¿ØÖ¡£¬3 NRC 0x78
-    dword setDelay; //ÑÓ³Ù·¢ËÍÊ±¼ä
+    long handle; // å¥æŸ„
+    int diagReq; // // 0 æ— åº”ç­” ï¼Œ 1æœ‰åº”ç­”ï¼Œ 2æµæ§å¸§ï¼Œ3 NRC 0x78
+    dword setDelay; //å»¶è¿Ÿå‘é€æ—¶é—´
     word p2server;
     word p2_server;// p2*server
     word timeout;
     
-    long reqLength;// ·¢ËÍµÄÕï¶Ï·şÎñÊı¾İ
+    long reqLength;// å‘é€çš„è¯Šæ–­æœåŠ¡æ•°æ®
     byte reqData[4096];
-    word respLength; // Õï¶ÏÏìÓ¦µÄÊµ¼Ê³¤¶È
+    word respLength; // è¯Šæ–­å“åº”çš„å®é™…é•¿åº¦
     byte respData[4096]; 
   }Diag;
   msTimer tSendAbortTimer_ms;
-  msTimer P2Timeout; //¼ÆËãp2serverºÍp2*server³¬Ê±
+  msTimer P2Timeout; //è®¡ç®—p2serverå’Œp2*serverè¶…æ—¶
 }
 
 void setP2Server(word p2server){
@@ -33,11 +33,11 @@ void setTimeout(word timeout){
   Diag.timeout = timeout;
 }
 /*
-CreateCANFDConnection ´´½¨Õï¶ÏÁ¬½Ó¶ÔÏó£¬·µ»ØÁ¬½Ó¾ä±ú£¬ĞèÒª¼ÓÔØosektp.dll£¬Ä¬ÈÏÎªCANFDÀàĞÍ
-WORD txId Õï¶Ï·¢ËÍID
-WORD rxId Õï¶ÏÏìÓ¦ID
+CreateCANFDConnection åˆ›å»ºè¯Šæ–­è¿æ¥å¯¹è±¡ï¼Œè¿”å›è¿æ¥å¥æŸ„ï¼Œéœ€è¦åŠ è½½osektp.dllï¼Œé»˜è®¤ä¸ºCANFDç±»å‹
+WORD txId è¯Šæ–­å‘é€ID
+WORD rxId è¯Šæ–­å“åº”ID
 
-return long Á¬½Ó¾ä±ú
+return long è¿æ¥å¥æŸ„
 */
 long CreateCANFDConnection( WORD txId, WORD rxId)
 {
@@ -49,7 +49,7 @@ long CreateCANFDConnection( WORD txId, WORD rxId)
   CanTpSetBitRateSwitch( handle, 1);         // activate BRS
   CanTpSetPadding(handle,0xAA);
   if(handle <= 0){
-    Write("CanTpCreateConnectionÊ§°Ü handle = %d",handle);
+    Write("CanTpCreateConnectionå¤±è´¥ handle = %d",handle);
   }
   if(Diag.p2_server == 0){
     setP2_Server(5000);
@@ -61,7 +61,7 @@ long CreateCANFDConnection( WORD txId, WORD rxId)
     setTimeout(200);
   }
   Diag.handle = handle;
-  CanTpFI_Enable(handle); //¿ªÆô¹ÊÕÏ¼¤»î×¢Èë ¿ÉÒÔÊ¹ÓÃËùÓĞCanTpFI¿ªÍ·µÄº¯Êı
+  CanTpFI_Enable(handle); //å¼€å¯æ•…éšœæ¿€æ´»æ³¨å…¥ å¯ä»¥ä½¿ç”¨æ‰€æœ‰CanTpFIå¼€å¤´çš„å‡½æ•°
   return handle;
 }
 
@@ -87,9 +87,9 @@ long CreateCANConnection(WORD txId, WORD rxId){
 }
 
 /*
-sendDiag ·¢ËÍÕï¶ÏÇëÇó£¬·¢ËÍÊı¾İ³¤¶ÈÎª´«ÈëÊı×éµÄ³¤¶È
-long diagHandle Õï¶Ï¾ä±ú£¬Í¨¹ıCreateCANFDConnection»ñµÃ
-byte data[]  Õï¶ÏÊı¾İ£¬ÀıÈç{0x10, 0x03}
+sendDiag å‘é€è¯Šæ–­è¯·æ±‚ï¼Œå‘é€æ•°æ®é•¿åº¦ä¸ºä¼ å…¥æ•°ç»„çš„é•¿åº¦
+long diagHandle è¯Šæ–­å¥æŸ„ï¼Œé€šè¿‡CreateCANFDConnectionè·å¾—
+byte data[]  è¯Šæ–­æ•°æ®ï¼Œä¾‹å¦‚{0x10, 0x03}
 */
 void sendDiag(long diagHandle,byte data[]){
   sendDiag(diagHandle, data, elCount(data));
@@ -97,12 +97,12 @@ void sendDiag(long diagHandle,byte data[]){
 
 
 /*
-sendDiag ·¢ËÍÕï¶ÏÇëÇó£¬ÇÒÖ¸¶¨³¤¶È
-long diagHandle Õï¶Ï¾ä±ú£¬Í¨¹ıCreateCANFDConnection»ñµÃ
-byte data[]  Õï¶ÏÊı¾İ£¬ÀıÈç{0x10, 0x03}
-int length   dataÖĞÓĞĞ§Êı¾İ³¤¶È
+sendDiag å‘é€è¯Šæ–­è¯·æ±‚ï¼Œä¸”æŒ‡å®šé•¿åº¦
+long diagHandle è¯Šæ–­å¥æŸ„ï¼Œé€šè¿‡CreateCANFDConnectionè·å¾—
+byte data[]  è¯Šæ–­æ•°æ®ï¼Œä¾‹å¦‚{0x10, 0x03}
+int length   dataä¸­æœ‰æ•ˆæ•°æ®é•¿åº¦
 */
-void sendDiag(long diagHandle,byte data[],int length){
+void sendDiag(long diagHandle,byte data[],long length){
   Diag.diagReq = 0;
   Diag.reqLength = length;
   memcpy(Diag.reqData,data,length);
@@ -123,7 +123,7 @@ int sendDiagWithNoResponse(long diagHandle,byte data[],int length){
 }
 
 /*
-Í£Ö¹·¢ËÍÕï¶Ï±¨ÎÄ
+åœæ­¢å‘é€è¯Šæ–­æŠ¥æ–‡
 */
 void stopSendDiag(long handle,dword ms){
   Diag.handle = handle;
@@ -136,14 +136,14 @@ on timer tSendAbortTimer_ms
 on timer P2Timeout{
   char outputBuffer[100];
   byteArrayToCharString(Diag.reqData,Diag.reqLength,outputBuffer);
-  testStep("ÇëÇó",outputBuffer);
-  write("Õï¶ÏÇëÇóÏìÓ¦³¬Ê±£¡");
-  TestStepFail("³¬Ê±","Õï¶ÏÇëÇóÏìÓ¦³¬Ê±");
+  testStep("è¯·æ±‚",outputBuffer);
+  write("è¯Šæ–­è¯·æ±‚å“åº”è¶…æ—¶ï¼");
+  TestStepFail("è¶…æ—¶","è¯Šæ–­è¯·æ±‚å“åº”è¶…æ—¶");
 }
-void waitDiagResp(){ // ×Ü¸Ğ¾õÕâÀïÓĞ¸ö´ó¿Ó
+void waitDiagResp(){ // æ€»æ„Ÿè§‰è¿™é‡Œæœ‰ä¸ªå¤§å‘
   word count;
   count = 0;
-  while(Diag.diagReq == 0 || Diag.diagReq == 3){ //Î´ÏìÓ¦»òÕßÏìÓ¦NRC 0x78
+  while(Diag.diagReq == 0 || Diag.diagReq == 3){ //æœªå“åº”æˆ–è€…å“åº”NRC 0x78
     if(count == Diag.timeout && Diag.diagReq == 0){ 
       Diag.respLength = 0;
       Diag.setDelay = 0;
@@ -162,10 +162,10 @@ void waitDiagResp(){ // ×Ü¸Ğ¾õÕâÀïÓĞ¸ö´ó¿Ó
     testWaitForTimeout(1);
     count++;
   };
-//  ÕâÀï²»ÔÙ½øĞĞ¿½±´£¬ÏìÓ¦Êı¾İºÍ³¤¶ÈÖ±½ÓÓÉCanTp_ReceptionInd»Øµ÷º¯Êı¿½±´µ½Diag.respData
+//  è¿™é‡Œä¸å†è¿›è¡Œæ‹·è´ï¼Œå“åº”æ•°æ®å’Œé•¿åº¦ç›´æ¥ç”±CanTp_ReceptionIndå›è°ƒå‡½æ•°æ‹·è´åˆ°Diag.respData
   Diag.diagReq = 0;
 }
-// µÈ´ıÃ»ÓĞÓ¦´ğ
+// ç­‰å¾…æ²¡æœ‰åº”ç­”
 int waitNoResponse(){
   word count;
   count = 0;
@@ -178,7 +178,7 @@ int waitNoResponse(){
     count++;
   }
   if(Diag.diagReq == 0){
-    Diag.respLength = 0; //·ÀÖ¹ÉÏÒ»´ÎÏìÓ¦µÄÊı¾İÎÛÈ¾
+    Diag.respLength = 0; //é˜²æ­¢ä¸Šä¸€æ¬¡å“åº”çš„æ•°æ®æ±¡æŸ“
     return 0;
   }
   count = Diag.diagReq;
@@ -186,23 +186,23 @@ int waitNoResponse(){
   return count;
 }
 /*
-getDiagResp »ñÈ¡Õï¶ÏÏìÓ¦Êı¾İ£¬
-byte buffer[] ±£´æÊı¾İµÄÊı×é
+getDiagResp è·å–è¯Šæ–­å“åº”æ•°æ®ï¼Œ
+byte buffer[] ä¿å­˜æ•°æ®çš„æ•°ç»„
 
-return long  bufferÓĞĞ§³¤¶È
+return long  bufferæœ‰æ•ˆé•¿åº¦
 */
 long getDiagResp(byte buffer[]){
   memcpy(buffer,Diag.respData,Diag.respLength);
   return Diag.respLength;
 }
-// CAPL¹Ù·½»Øµ÷º¯Êı£¬ÓÃÓÚ½ÓÊÕÕï¶ÏÏìÓ¦
+// CAPLå®˜æ–¹å›è°ƒå‡½æ•°ï¼Œç”¨äºæ¥æ”¶è¯Šæ–­å“åº”
 CanTp_ReceptionInd(long handle, byte data[])
 {
   int i;
   cancelTimer(P2Timeout);
 //  Write("CanTp_ReceptionInd is running ");
   i=elCount(data);
-//  if((data[0]&0xF0) == 0x30){  // Á÷¿ØÖ¡²»»áµ÷ÓÃÕâ¸öº¯Êı£¡£¡£¡£¡
+//  if((data[0]&0xF0) == 0x30){  // æµæ§å¸§ä¸ä¼šè°ƒç”¨è¿™ä¸ªå‡½æ•°ï¼ï¼ï¼ï¼
 //    Diag.respLength = i;
 //    memcpy(Diag.respData,data,i);
 //    Diag.diagReq = 2;
@@ -211,15 +211,15 @@ CanTp_ReceptionInd(long handle, byte data[])
 //  }
   if(data[0]==0x7f && data[2]==0x78){
     Diag.respLength = 0;
-    Diag.diagReq = 3;  // ±íÊ¾µ±Ç°´¦ÓÚNRC 0x78×´Ì¬
+    Diag.diagReq = 3;  // è¡¨ç¤ºå½“å‰å¤„äºNRC 0x78çŠ¶æ€
     setTimer(P2Timeout,Diag.p2_server);
-//    write("ÊÕµ½NRC 0x78,ÖØĞÂ¼ÆÊ±");
+//    write("æ”¶åˆ°NRC 0x78,é‡æ–°è®¡æ—¶");
     return;
   }
-  memcpy(Diag.respData,data,i); //½«»ñµÃµÄÏìÓ¦Êı¾İ¿½±´µ½Diag.respData
+  memcpy(Diag.respData,data,i); //å°†è·å¾—çš„å“åº”æ•°æ®æ‹·è´åˆ°Diag.respData
   Diag.respLength = i;
 //  Write("diagReq %d",Diag.diagReq);
-  Diag.diagReq = 1;// ½«½ÓÊÕ±êÖ¾Î»ÖÃÒ»£¬±íÊ¾ÒÑ¾­ÊÕµ½ÁËÏìÓ¦
+  Diag.diagReq = 1;// å°†æ¥æ”¶æ ‡å¿—ä½ç½®ä¸€ï¼Œè¡¨ç¤ºå·²ç»æ”¶åˆ°äº†å“åº”
 }
 
 
@@ -230,19 +230,19 @@ void sendDiagDelay(long handle,dword ms){
 void closeDiagDelay(){
   Diag.setDelay = 0;
 }
-// CAPL¹Ù·½»Øµ÷º¯Êı£¬·¢ËÍÇ°»Øµ÷º¯Êı
+// CAPLå®˜æ–¹å›è°ƒå‡½æ•°ï¼Œå‘é€å‰å›è°ƒå‡½æ•°
 void CanTp_PreSend( long handle, word msgDlc[], byte data[])
 {
 //  Write("CanTp_PreSend: msgDlc[0] = %d",msgDlc[0]);
 //  Write("CanTp_PreSend: data[0] = %x,data[1] = %x",data[0],data[1]);
-  if(data[0] == 3 && (data[1]&0xF0) == 0x30){//ĞŞ¸Ä¸ñÊ½À´·¢ËÍÁ÷¿ØÖ¡
+  if(data[0] == 3 && (data[1]&0xF0) == 0x30){//ä¿®æ”¹æ ¼å¼æ¥å‘é€æµæ§å¸§
     data[0]=data[1];
     data[1]=data[2];
     data[2]=data[3];
     data[3]=CanTpGetPadding(handle);
   }
   if(Diag.setDelay > 0){
-    CanTpFI_SetDelay(Diag.setDelay * 1000); //Ö´ĞĞÑÓ³Ù·¢ËÍ
+    CanTpFI_SetDelay(Diag.setDelay * 1000); //æ‰§è¡Œå»¶è¿Ÿå‘é€
   }
 }
 
@@ -250,25 +250,25 @@ void CanTp_ErrorInd( long connHandle, long error)
 {  
   switch(error){
     case 1:
-      write("CanTp_ErrorInd : µÈ´ıÁ¬ĞøÖ¡³¬Ê±£¨Timeout waiting for Consecutive Frame.£© ");
+      write("CanTp_ErrorInd : ç­‰å¾…è¿ç»­å¸§è¶…æ—¶ï¼ˆTimeout waiting for Consecutive Frame.ï¼‰ ");
       break;
     case 2:
-      write("CanTp_ErrorInd : µÈ´ıÁ÷¿ØÖ¡³¬Ê±£¨Timeout waiting for Flow Control Frame.£© ");
+      write("CanTp_ErrorInd : ç­‰å¾…æµæ§å¸§è¶…æ—¶ï¼ˆTimeout waiting for Flow Control Frame.ï¼‰ ");
       break;
     case 6:
-      write("CanTp_ErrorInd : ±¨ÎÄ·¢ËÍ³¬Ê±£¨Timeout while trying to send a CAN message.£© ");
+      write("CanTp_ErrorInd : æŠ¥æ–‡å‘é€è¶…æ—¶ï¼ˆTimeout while trying to send a CAN message.ï¼‰ ");
       break;
     case 8:
-      write("CanTp_ErrorInd : ½ÓÊÕÆ÷»º³åÇøÒç³ö£¬¼´½ÓÊÕµ½Á÷¿ØÖÆÒç³öÖ¡¡££¨Receiver buffer overflow, i.e. a Flow Control Overflow Frame was received.£© ");
+      write("CanTp_ErrorInd : æ¥æ”¶å™¨ç¼“å†²åŒºæº¢å‡ºï¼Œå³æ¥æ”¶åˆ°æµæ§åˆ¶æº¢å‡ºå¸§ã€‚ï¼ˆReceiver buffer overflow, i.e. a Flow Control Overflow Frame was received.ï¼‰ ");
       break;
     case 11:
-      write("CanTp_ErrorInd : Êı¾İ´«ÊäÒÑ´ÓCAPL³ÌĞòÖĞÃ÷È·ÖĞÖ¹¡££¨The data transfer has been aborted explicitly from the CAPL program.£© ");
+      write("CanTp_ErrorInd : æ•°æ®ä¼ è¾“å·²ä»CAPLç¨‹åºä¸­æ˜ç¡®ä¸­æ­¢ã€‚ï¼ˆThe data transfer has been aborted explicitly from the CAPL program.ï¼‰ ");
       break;
     default:
-      write("CanTp_ErrorInd : Î´Öª´íÎó ´íÎó±êÊ¶ %d£¬²Î¼ûError Codes (OSEK TP)",error);
+      write("CanTp_ErrorInd : æœªçŸ¥é”™è¯¯ é”™è¯¯æ ‡è¯† %dï¼Œå‚è§Error Codes (OSEK TP)",error);
   }
   Diag.respLength = 0; 
-  Diag.diagReq = 0;  // ĞŞ¸ÄÕâÀï»áÓ°Ïì waitNoResponse
+  Diag.diagReq = 0;  // ä¿®æ”¹è¿™é‡Œä¼šå½±å“ waitNoResponse
 }
 
 OSEKTL_ErrorInd(int error){
@@ -277,17 +277,17 @@ OSEKTL_ErrorInd(int error){
       write("OSEKTL_ErrorInd : Timeout waiting for CF. ");
       break;
     default:
-      write("OSEKTL_ErrorInd : Î´Öª´íÎó");
+      write("OSEKTL_ErrorInd : æœªçŸ¥é”™è¯¯");
   }
 }
 
 
 /*
-sendDiag36 36·şÎñ×¨ÓÃµÄ·¢ËÍº¯Êı£¬
-long diagHandle Õï¶Ï¾ä±ú
-byte buffer[] ĞèÒª·¢ËÍµÄÊı¾İ
-long bufferlen  Êı¾İÓĞĞ§³¤¶È
-long buffertop ·¢ËÍÆğÊ¼Î»ÖÃÖ¸Õë
+sendDiag36 36æœåŠ¡ä¸“ç”¨çš„å‘é€å‡½æ•°ï¼Œ
+long diagHandle è¯Šæ–­å¥æŸ„
+byte buffer[] éœ€è¦å‘é€çš„æ•°æ®
+long bufferlen  æ•°æ®æœ‰æ•ˆé•¿åº¦
+long buffertop å‘é€èµ·å§‹ä½ç½®æŒ‡é’ˆ
 */
 int sendDiag36(long diagHandle,byte buffer[],long bufferlen,long buffertop){
   return sendDiag36(diagHandle,buffer,bufferlen,buffertop,130);
@@ -468,52 +468,52 @@ void sendDiag3101FF01(long diagHandle){
 
 
 
-// ============================== ¶ÏÑÔ=============================
+// ============================== æ–­è¨€=============================
 void printDiagReqAndRsep(){
   char outputBuffer[100];
   byteArrayToCharString(Diag.reqData,Diag.reqLength,outputBuffer);
-  testStep("ÇëÇó",outputBuffer);
-  write("ÇëÇó£º%s",outputBuffer);
+  testStep("è¯·æ±‚",outputBuffer);
+  write("è¯·æ±‚ï¼š%s",outputBuffer);
   
   byteArrayToCharString(Diag.respData,Diag.respLength,outputBuffer);
-  testStep("Ó¦´ğ",outputBuffer);
-  write("Ó¦´ğ£º%s",outputBuffer);
+  testStep("åº”ç­”",outputBuffer);
+  write("åº”ç­”ï¼š%s",outputBuffer);
 }
 void AssertDiagTrue(){
   if(Diag.reqData[0] + 0x40 != Diag.respData[0]){
-    write("Ô¤ÆÚ¿Ï¶¨Ó¦´ğ£¬Êµ¼Ê·Ç¿Ï¶¨Ó¦´ğ\n");
-    TestStepFail("", "Ô¤ÆÚ¿Ï¶¨Ó¦´ğ£¬Êµ¼Ê·Ç¿Ï¶¨Ó¦´ğ");
+    write("é¢„æœŸè‚¯å®šåº”ç­”ï¼Œå®é™…éè‚¯å®šåº”ç­”\n");
+    TestStepFail("", "é¢„æœŸè‚¯å®šåº”ç­”ï¼Œå®é™…éè‚¯å®šåº”ç­”");
   }else{
-    testStepPass("","Ô¤ÆÚ¿Ï¶¨Ó¦´ğ£¬Êµ¼Ê¿Ï¶¨Ó¦´ğ");
+    testStepPass("","é¢„æœŸè‚¯å®šåº”ç­”ï¼Œå®é™…è‚¯å®šåº”ç­”");
   }
   printDiagReqAndRsep();
 }
 void AssertDiagFalse(){
  if(Diag.respData[0] != 0x7F){
-   write("Ô¤ÆÚ·ñ¶¨Ó¦´ğ£¬ÊÕµ½·Ç·ñ¶¨Ó¦´ğ\n");
-   TestStepFail("","Ô¤ÆÚ·ñ¶¨Ó¦´ğ£¬ÊÕµ½·Ç·ñ¶¨Ó¦´ğ");
+   write("é¢„æœŸå¦å®šåº”ç­”ï¼Œæ”¶åˆ°éå¦å®šåº”ç­”\n");
+   TestStepFail("","é¢„æœŸå¦å®šåº”ç­”ï¼Œæ”¶åˆ°éå¦å®šåº”ç­”");
  }else{
-   testStepPass("","Ô¤ÆÚ·ñ¶¨Ó¦´ğ£¬Êµ¼Ê·ñ¶¨Ó¦´ğ");
+   testStepPass("","é¢„æœŸå¦å®šåº”ç­”ï¼Œå®é™…å¦å®šåº”ç­”");
  }
   printDiagReqAndRsep();
 }
 void AssertDiagNoResponse(int len){
-  if(len != 1){ // 0 ÎŞÓ¦´ğ £¬ 1ÓĞÓ¦´ğ£¬ 2Á÷¿ØÖ¡£¬3 NRC 0x78
-    testStepPass("","Ô¤ÆÚÎŞÓ¦´ğ£¬Êµ¼ÊÎŞÓ¦´ğ");
+  if(len != 1){ // 0 æ— åº”ç­” ï¼Œ 1æœ‰åº”ç­”ï¼Œ 2æµæ§å¸§ï¼Œ3 NRC 0x78
+    testStepPass("","é¢„æœŸæ— åº”ç­”ï¼Œå®é™…æ— åº”ç­”");
   }else{
-    testStepFail("","Ô¤ÆÚÎŞÓ¦´ğ£¬Êµ¼ÊÓĞÓ¦´ğ");
+    testStepFail("","é¢„æœŸæ— åº”ç­”ï¼Œå®é™…æœ‰åº”ç­”");
   }
   printDiagReqAndRsep();
 }
 void AssertDiagFalseWithNRC(byte nrc){
  if(Diag.respData[0] != 0x7F){
-   write("Ô¤ÆÚ·ñ¶¨Ó¦´ğ£¬ÊÕµ½·Ç·ñ¶¨Ó¦´ğ\n");
-   TestStepFail("","Ô¤ÆÚ·ñ¶¨Ó¦´ğ£¬ÊÕµ½·Ç·ñ¶¨Ó¦´ğ");
+   write("é¢„æœŸå¦å®šåº”ç­”ï¼Œæ”¶åˆ°éå¦å®šåº”ç­”\n");
+   TestStepFail("","é¢„æœŸå¦å®šåº”ç­”ï¼Œæ”¶åˆ°éå¦å®šåº”ç­”");
  }else{
    if(Diag.respData[Diag.respLength - 1] != nrc){
-     TestStepFail("","·ñ¶¨Ó¦´ğÂë²»·ûºÏÒªÇó");
+     TestStepFail("","å¦å®šåº”ç­”ç ä¸ç¬¦åˆè¦æ±‚");
    }else{
-     testStepPass("","Ô¤ÆÚ·ñ¶¨Ó¦´ğ£¬ÇÒNRCÕıÈ·");
+     testStepPass("","é¢„æœŸå¦å®šåº”ç­”ï¼Œä¸”NRCæ­£ç¡®");
    }
  }
   printDiagReqAndRsep();
@@ -523,29 +523,29 @@ void AssertDiagCompareBytes(byte byteArray[], int startIdx, byte inputArray[], i
   int i;
     for (i = 0; i < length; i++) {
         if (byteArray[startIdx + i] != inputArray[i]) {
-          TestStepFail("","Êı¾İÓëÔ¤ÆÚ²»·û");
+          TestStepFail("","æ•°æ®ä¸é¢„æœŸä¸ç¬¦");
         }
     }
-   testStepPass("","Êı¾İÓëÔ¤ÆÚÒ»ÖÂ");
+   testStepPass("","æ•°æ®ä¸é¢„æœŸä¸€è‡´");
   byteArrayToCharString(inputArray,length,outputBuffer);
-  testStep("Ô¤ÆÚÊı¾İ",outputBuffer);
+  testStep("é¢„æœŸæ•°æ®",outputBuffer);
   printDiagReqAndRsep();
 }
 void AssertDiagCompareBytes(int startIdx, byte input) {
   char outputBuffer[100];
   int i;
   if (Diag.respData[startIdx] != input) {
-      TestStepFail("","Êı¾İÓëÔ¤ÆÚ²»·û",input);
+      TestStepFail("","æ•°æ®ä¸é¢„æœŸä¸ç¬¦",input);
   }
-  testStepPass("","Êı¾İÓëÔ¤ÆÚÒ»ÖÂ");
+  testStepPass("","æ•°æ®ä¸é¢„æœŸä¸€è‡´");
   printDiagReqAndRsep();
 }
 void AssertDiagCompareBytes(byte byteArray[], int startIdx, byte input) {
   char outputBuffer[100];
   int i;
   if (byteArray[startIdx] != input) {
-      TestStepFail("","Êı¾İÓëÔ¤ÆÚ²»·û",input);
+      TestStepFail("","æ•°æ®ä¸é¢„æœŸä¸ç¬¦",input);
   }
-  testStepPass("","Êı¾İÓëÔ¤ÆÚÒ»ÖÂ");
+  testStepPass("","æ•°æ®ä¸é¢„æœŸä¸€è‡´");
   printDiagReqAndRsep();
 }
