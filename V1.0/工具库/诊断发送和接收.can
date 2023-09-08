@@ -361,7 +361,10 @@ void sendDiag31010203(long diagHandle){
   byte q31010203[4] = {0x31,0x01,0x02,0x03};
   sendDiag(diagHandle,q31010203);
 }
-
+void sendDiag8501(long diagHandle){
+  byte q8501[2] = {0x85, 0x01};
+  sendDiag(diagHandle,q8501);
+}
 void sendDiag8502(long diagHandle){
   byte q8502[2] = {0x85, 0x02};
   sendDiag(diagHandle,q8502);
