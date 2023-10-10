@@ -1,4 +1,4 @@
-﻿/*@!Encoding:936*/
+/*@!Encoding:936*/
 includes
 {
   
@@ -31,8 +31,35 @@ void _createMessage(message * a,struct OutPutMsg b){
   a.dlc = b.dlc;
   a.BRS = b.BRS;
   a.FDF = b.FDF;
-  for(i=0;i<b.dlc;i++){
+  for(i=0;i<_getDataLengthByDLC(b.dlc);i++){
     a.byte(i)=b.msgData[i];
+  }
+}
+int _getDataLengthByDLC(int dlc){
+  switch(dlc){
+    case 9:
+      return 12;
+      break;
+    case 10:
+      return 16;
+      break;
+    case 11:
+      return 20;
+      break;
+    case 12:
+      return 24;
+      break;
+    case 13:
+      return 32;
+      break;
+    case 14:
+      return 48;
+      break;
+    case 15:
+      return 64;
+      break;
+    default:
+      return 8;
   }
 }
 long addCANMsg(word id,word cycle){

@@ -78,8 +78,8 @@ int _waitResponse(long diagHandle,long count){
       PendingCount = getDiagPendingCount(diagHandle);
       PendingTime = 0;
     }
-    if(PendingTime >= getDiagP2server(diagHandle)){
-      write(" NRC 0x78 诊断响应超时!!!");
+    if(PendingTime >= getDiagP2_server(diagHandle)){
+      logging(warning,LOG_MESSAGE," NRC 0x78 诊断响应超时!!!");
       setDiagRespInd(diagHandle,NoAnswer);
       return diagTimeout;
     }
@@ -132,15 +132,24 @@ long getDiagResp(long handle,byte buffer[]){
 // 接收到响应数据回调函数
 void CanTp_ReceptionInd( long connHandle, byte data[])
 {
+  long status;
+  status = getDiagRespInd(connHandle);
+  //排除同时建立物理和功能寻址时，收到双份应答的情况
+  if(status > WaitAnswer){
+    logging(debug,LOG_Function,"CanTp_ReceptionInd: 当前发送状态为：",getDiagRespInd(connHandle));
+    return;
+  }
   if(data[0]==0x7f && data[2]==0x78){
     setDiagPendingCount(connHandle,getDiagPendingCount(connHandle)+1);
     setDiagRespInd(connHandle,Pending);
+    saveDiagMsg(RxMsg,data,elCount(data));
     return;
   }
   setDiagRespData(connHandle,data,elcount(data));
   setDiagRespInd(connHandle,Answer);
   logging(debug,LOG_MESSAGE, "收到应答报文， connHandle = ",connHandle);
   logging(debug,LOG_MESSAGE,"应答：",data,elCount(data));
+  saveDiagMsg(RxMsg,data,elCount(data));
 }
 // 发送成功回调函数
 void CanTp_SendCon( long connHandle, dword count) //报文发送完成后调用这个函数
@@ -153,6 +162,8 @@ void CanTp_SendCon( long connHandle, dword count) //报文发送完成后调用�
   logging(debug,LOG_MESSAGE,"报文发送成功 connHandle = ",connHandle);
   logging(debug,LOG_MESSAGE,"请求：",buffer,len);
   setDiagRespInd(connHandle,WaitAnswer);
+  // 存储诊断报文
+  saveDiagMsg(TxMsg,buffer,len);
 }
 void CanTp_FirstFrameInd( long connHandle, dword length)
 {
@@ -242,7 +253,7 @@ void sendDiag1001(long diagHandle){
 void sendDiag1003(long diagHandle){
   byte request[2]={0x10,0x03};
   sendDiag(diagHandle,request);
-  testWaitForTimeout(500);
+  testWaitForTimeout(100);
 }
 
 void sendDiag1002(long diagHandle){
@@ -253,6 +264,11 @@ void sendDiag1002(long diagHandle){
 void sendDiag1101(long diagHandle){
   byte q1101[2]={0x11,0x01};
   sendDiag(diagHandle,q1101);
+  testWaitForTimeout(500);
+}
+void sendDiag1103(long diagHandle){
+  byte q1103[2]={0x11,0x03};
+  sendDiag(diagHandle,q1103);
   testWaitForTimeout(500);
 }
 
@@ -339,6 +355,10 @@ void sendDiag3E00(long diagHandle){
   byte q3E[2]={0x3E,0x00};
   sendDiag(diagHandle,q3E);
 }
+void sendDiag3E80(long diagHandle){
+  byte q3E[2]={0x3E,0x80};
+  sendDiag(diagHandle,q3E);
+}
 void sendDiag31010202(long diagHandle,byte crcArray[],long crcArrayLen){
   byte q31010202[300] ={0x31,0x01,0x02,0x02};
   long len;
@@ -382,8 +402,8 @@ void loggingMessage(long handle){
     getDiagReqData(handle,reqData);
     respLength = getDiagRespLength(handle);
     getDiagRespData(handle,respData);
-    logging(info,LOG_ASSERT,"请求报文：",reqData,reqLength);
-    logging(info,LOG_ASSERT,"响应报文：",respData,respLength);
+    logging(info,LOG_MESSAGE,"请求报文：",reqData,reqLength);
+    logging(info,LOG_MESSAGE,"响应报文：",respData,respLength);
 }
 void AssertDiagTrue(long handle){
   long len;
@@ -407,7 +427,7 @@ void AssertDiagTrue(long handle){
 void AssertDiagFalse(long handle){
   long len;
   byte resp[1024], req[1024];
-  if(!getDiagRespInd(handle)){
+  if(getDiagRespInd(handle)<0){
     logging(error,LOG_ASSERT,"响应异常！");
     loggingMessage(handle);
     return;
@@ -416,16 +436,143 @@ void AssertDiagFalse(long handle){
   getDiagReqData(handle,req);
   len = getDiagRespLength(handle);
   
-  if(req[0] != 0x7F){
+  if(resp[0] != 0x7F){
     logging(error,LOG_ASSERT, "未收到否定应答");
   }else{
-    logging(info,LOG_ASSERT,"预期接收到肯定应答");
+    logging(info,LOG_ASSERT,"预期接收到否定应答");
+  }
+  loggingMessage(handle);
+}
+void AssertDiagFalse(long handle,byte nrc){
+  long len;
+  byte resp[1024], req[1024];
+  if(getDiagRespInd(handle)<0){
+    logging(error,LOG_ASSERT,"响应异常！");
+    loggingMessage(handle);
+    return;
+  }
+  getDiagRespData(handle,resp);
+  getDiagReqData(handle,req);
+  len = getDiagRespLength(handle);
+  
+  if(resp[0] != 0x7F){
+    logging(error,LOG_ASSERT, "未收到否定应答");
+  }else{
+    if(resp[len-1] == nrc){
+      logging(info,LOG_ASSERT,"接收到否定应答,且NRC否定应答码为",nrc);
+    }else{
+      logging(error,LOG_ASSERT, "收到否定应答，但是NRC与预期不符，预期是",nrc,"实际是",resp[len-1]);
+    }
   }
   loggingMessage(handle);
 }
 void AssertDiagNoResponse(long handle){
+  char buffer[100];
   if(getDiagRespInd(handle) != NoAnswer){
-    logging(error,LOG_ASSERT, "期待无响应，实际状态为 getDiagRespInd(handle) =  ",getDiagRespInd(handle));
-  }
+    getDiagRespIndTxt(handle,buffer);
+    logging(error,LOG_ASSERT, "期待无响应，实际状态为 ",buffer);
+  }else{
     logging(info,LOG_ASSERT,"期待无响应，实际无响应");
+  }
+  loggingMessage(handle);
+}
+void AssertDiagCompareBytes(long handle,int startIdx, byte input) {
+  long len;
+  byte resp[1024], req[1024];
+  
+  getDiagRespData(handle,resp);
+  getDiagReqData(handle,req);
+  len = getDiagRespLength(handle);
+  
+  if(getDiagRespInd(handle)<0){
+    logging(error,LOG_ASSERT,"响应异常！");
+    loggingMessage(handle);
+    return;
+  }
+  if(req[0] + 0x40 != resp[0]){
+    logging(error,LOG_ASSERT, "未收到肯定应答！");
+    loggingMessage(handle);
+    return;
+  }
+  if(startIdx+1>len){
+    logging(error,LOG_ASSERT, "长度小于预期，判定第",startIdx,"个位时异常，响应报文的长度小于该长度");
+    loggingMessage(handle);
+    return;
+  }
+  getDiagRespData(handle,resp);
+  getDiagReqData(handle,req);
+  len = getDiagRespLength(handle);
+  
+  if(resp[startIdx] != input){
+    logging(error,LOG_ASSERT, "响应数据与预期不符，预期是",input);
+  }else{
+    logging(info,LOG_ASSERT,"数据与预期一致");
+  }
+  loggingMessage(handle);
+}
+void AssertDiagCompareBytes(long handle, byte input[],long length) {
+  long len,i;
+  byte resp[1024], req[1024];
+  
+  getDiagRespData(handle,resp);
+  getDiagReqData(handle,req);
+  len = getDiagRespLength(handle);
+  
+  if(getDiagRespInd(handle)<0){
+    logging(error,LOG_ASSERT,"响应异常！");
+    loggingMessage(handle);
+    return;
+  }
+  if(req[0] + 0x40 != resp[0]){
+    logging(error,LOG_ASSERT, "未收到肯定应答！");
+    loggingMessage(handle);
+    return;
+  }
+  getDiagRespData(handle,resp);
+  getDiagReqData(handle,req);
+  len = getDiagRespLength(handle);
+  
+  for(i=0;i<length;i++){
+    if(input[i] != resp[i]){
+      logging(error,LOG_ASSERT, "响应数据与预期不符，预期是：",input,length);
+      loggingMessage(handle);
+      return;
+    }
+  }
+  logging(info,LOG_ASSERT,"数据与预期一致");
+  loggingMessage(handle);
+}
+
+// 判断byte数组是否符合ASCII码要求
+void AssertIsASCII(byte input[],long startIdx,long endIdx){
+  long i;
+  for(i=startIdx;i<endIdx;i++){
+    if(input[i] > 0x7F){
+      logging(error,LOG_ASSERT,"数据不符合ASCII码要求");
+      return;
+    }
+  }
+  logging(info,LOG_ASSERT,"数据符合ASCII码要求");
+}
+// 判断byte数组是否符合BCD码要求
+void AssertIsBCD(byte input[],long startIdx,long endIdx){
+  long i;
+  for(i=startIdx;i<endIdx;i++){
+    if(input[i] > 0x99){
+      logging(error,LOG_ASSERT,"数据不符合BCD码要求");
+      return;
+    }
+  }
+  logging(info,LOG_ASSERT,"数据符合BCD码要求");
+}
+
+void AssertIsZero(byte input[],long startIdx,long endIdx){
+  long i;
+  for(i=startIdx;i<endIdx;i++){
+    if(input[i] != 0){
+      logging(error,LOG_ASSERT,"期待数据为0，实际不为0");
+      return;
+    }
+  }
+  logging(info,LOG_ASSERT,"数据为0");
 }

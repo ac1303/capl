@@ -10,19 +10,22 @@ variables
     RxMsg = 1
   };
   enum RespType{
-    Answer=1,
     diagTimeoutButAnswered=2,
+    Answer=1,
+    
     Sending=-1,
     SendFail=-2,
-    WaitAnswer=-3,
-    NoAnswer=-4,
-    Pending=-5,   // 0x78
-    FlowControl=-6,
-    OverFlow=-7,
-    diagTimeout=-8
+    NoAnswer=-3,
+    diagTimeout=-4,
+    
+    WaitAnswer=-5,
+    Pending=-6,   // 0x78
+    FlowControl=-7,
+    OverFlow=-8
   };
   // DiagMsg 用来存储发送和接收的数据
   struct DiagMsg{
+    float time;
     enum DiagDir dir;
     int dateLen;
     char date[61];
@@ -98,9 +101,29 @@ long getDiagHandle(long handle){
 }
 void setDiagRespInd(long handle,enum RespType value){
   _diagMap[handle].respInd = value;
+  if(value<0){
+    setDiagRespDataLength(handle,0);
+  }
 }
 enum RespType getDiagRespInd(long handle){
   return _diagMap[handle].respInd;
+}
+void getDiagRespIndTxt(long handle,char buffer[]){
+  char AnswerTxt[10]="Answer";
+  char diagTimeoutButAnsweredTxt[30]="diagTimeoutButAnswered";
+  char RespIndTxt_error[15]="未知状态";
+  
+  switch(1){
+    case Answer:
+      strncpy(buffer,AnswerTxt,elCount(AnswerTxt));
+      break;
+    case diagTimeoutButAnswered:
+      strncpy(buffer,diagTimeoutButAnsweredTxt,elCount(diagTimeoutButAnsweredTxt));
+      break;
+    default:
+      strncpy(buffer,RespIndTxt_error,elCount(error));
+      break;
+  }
 }
 void setDiagDelayTime(long handle,dword value){
   _diagMap[handle].delayTime = value;
@@ -147,6 +170,9 @@ word getDiagTimeout(long handle){
 long getDiagReqLength(long handle){
   return _diagMap[handle].reqLength;
 }
+void setDiagReqDataLength(long handle, long length){
+  _diagMap[handle].reqLength = length;
+}
 void setDiagReqData(long handle,byte value[], long length){
   memcpy(_diagMap[handle].reqData,value,length);
   _diagMap[handle].reqLength = length;
@@ -156,6 +182,9 @@ void getDiagReqData(long handle,byte value[]){
 }
 long getDiagRespLength(long handle){
   return _diagMap[handle].respLength;
+}
+void setDiagRespDataLength(long handle,long length){
+  _diagMap[handle].respLength = length;
 }
 void setDiagRespData(long handle,byte value[], long length){
   memcpy(_diagMap[handle].respData,value,length);
@@ -169,15 +198,64 @@ void getDiagRespData(long handle,byte value[]){
   }
   memcpy(value,_diagMap[handle].respData,_diagMap[handle].respLength);
 }
+long getDiagRespDataAndLength(long handle,byte value[]){
+  long len;
+  len = _diagMap[handle].respLength;
+  if(elcount(value)<_diagMap[handle].respLength){
+    memcpy(value,_diagMap[handle].respData,elcount(value));
+    write("接收数组大小小于实际长度,只返回部分数据");
+  }else{
+    memcpy(value,_diagMap[handle].respData,_diagMap[handle].respLength);
+  }
+  return len;
+}
 // =========================================报文消息保存========================================================
 // 保存报文消息
 void saveDiagMsg(enum DiagDir dir ,byte date[],int dateLen){
+  _diagMsgMap[_msgMapIndex].time = timeNowFloat()/100000.0;
   _diagMsgMap[_msgMapIndex].dir = dir;
   _diagMsgMap[_msgMapIndex].dateLen = dateLen;
   // 将byte转换为char
   msgByteToChar(date,dateLen,_diagMsgMap[_msgMapIndex].date);
-  write(_diagMsgMap[_msgMapIndex].date);
   _msgMapIndex++;
+}
+
+void printDiagMsg(){
+  long i,table;
+  char num[15];
+  char dir_Rx[3]="Rx";
+  char dir_Tx[3]="Tx";
+  WriteTextColor(1,120,146,98);
+  write("%-10s %-14s %-13s %-20s","时间","发送方","长度","数据");
+  
+  table = TestInfoTable("诊断报文数据");
+  TestInfoHeadingBegin(table, 0);
+  TestInfoCell(table, "时间");
+  TestInfoCell(table, "发送方");
+  TestInfoCell(table, "长度");
+  TestInfoCell(table, "数据");
+  TestInfoCell(table, "Result");
+  TestInfoHeadingEnd(table);
+
+  for(i=0;i<_msgMapIndex;i++){
+    TestInfoRow(table, 0);
+    _gcvt(_diagMsgMap[i].time,10,num);
+    TestInfoCell(table, num);
+    if(_diagMsgMap[i].dir == RxMsg){
+      write("%-10s %-10s %-10d %-20s",num,dir_Rx,_diagMsgMap[i].dateLen,_diagMsgMap[i].date);
+      TestInfoCell(table, dir_Rx);
+    }else{
+      write("%-10s %-10s %-10d %-20s",num,dir_Tx,_diagMsgMap[i].dateLen,_diagMsgMap[i].date);
+      TestInfoCell(table, dir_Tx);
+    }
+    ltoa(_diagMsgMap[i].dateLen, num, 10);
+    TestInfoCell(table, num);
+    TestInfoCell(table, _diagMsgMap[i].date);
+    TestInfoCell(table, "");
+  }
+  WriteTextColor(1,0,0,0);
+  TestStep(0, "[报文]", table);
+  clearDiagMsg();
 }
 // 清空报文消息
 void clearDiagMsg(){
